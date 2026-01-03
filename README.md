@@ -65,7 +65,7 @@ Add to your `opencode.json`:
 
 ```json
 {
-  "plugin": ["@plannotator/opencode"]
+  "plugin": ["@plannotator/opencode@latest"]
 }
 ```
 

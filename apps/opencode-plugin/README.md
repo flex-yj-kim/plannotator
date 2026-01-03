@@ -24,11 +24,13 @@ Add to your `opencode.json`:
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["@plannotator/opencode"]
+  "plugin": ["@plannotator/opencode@latest"]
 }
 ```
 
 Restart OpenCode. The `submit_plan` tool is now available.
+
+> **Note:** Use `@latest` to ensure you always get the newest version. Without it, OpenCode may cache an older version.
 
 ## How It Works
 
