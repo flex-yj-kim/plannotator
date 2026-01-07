@@ -12,14 +12,26 @@ import {
   saveBearSettings,
   type BearSettings,
 } from '../utils/bear';
+import {
+  getAgentSwitchSettings,
+  saveAgentSwitchSettings,
+  AGENT_OPTIONS,
+  type AgentSwitchSettings,
+} from '../utils/agentSwitch';
+import {
+  getPlanSaveSettings,
+  savePlanSaveSettings,
+  type PlanSaveSettings,
+} from '../utils/planSave';
 
 interface SettingsProps {
   taterMode: boolean;
   onTaterModeChange: (enabled: boolean) => void;
   onIdentityChange?: (oldIdentity: string, newIdentity: string) => void;
+  origin?: 'claude-code' | 'opencode' | null;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange, onIdentityChange }) => {
+export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange, onIdentityChange, origin }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [identity, setIdentity] = useState('');
   const [obsidian, setObsidian] = useState<ObsidianSettings>({
@@ -30,12 +42,16 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
   const [detectedVaults, setDetectedVaults] = useState<string[]>([]);
   const [vaultsLoading, setVaultsLoading] = useState(false);
   const [bear, setBear] = useState<BearSettings>({ enabled: false });
+  const [agent, setAgent] = useState<AgentSwitchSettings>({ switchTo: 'build' });
+  const [planSave, setPlanSave] = useState<PlanSaveSettings>({ enabled: true, customPath: null });
 
   useEffect(() => {
     if (showDialog) {
       setIdentity(getIdentity());
       setObsidian(getObsidianSettings());
       setBear(getBearSettings());
+      setAgent(getAgentSwitchSettings());
+      setPlanSave(getPlanSaveSettings());
     }
   }, [showDialog]);
 
@@ -69,6 +85,18 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
     saveBearSettings(newSettings);
   };
 
+  const handleAgentChange = (switchTo: AgentSwitchSettings['switchTo']) => {
+    const newSettings = { switchTo };
+    setAgent(newSettings);
+    saveAgentSwitchSettings(newSettings);
+  };
+
+  const handlePlanSaveChange = (updates: Partial<PlanSaveSettings>) => {
+    const newSettings = { ...planSave, ...updates };
+    setPlanSave(newSettings);
+    savePlanSaveSettings(newSettings);
+  };
+
   const handleRegenerateIdentity = () => {
     const oldIdentity = identity;
     const newIdentity = regenerateIdentity();
@@ -95,7 +123,7 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
           onClick={() => setShowDialog(false)}
         >
           <div
-            className="bg-card border border-border rounded-xl w-full max-w-sm shadow-2xl relative"
+            className="bg-card border border-border rounded-xl w-full max-w-2xl shadow-2xl relative"
             onClick={e => e.stopPropagation()}
           >
             {taterMode && <TaterSpritePullup />}
@@ -133,6 +161,80 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
                   </button>
                 </div>
               </div>
+
+              <div className="border-t border-border" />
+
+              {/* Plan Saving */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium">Save Plans</div>
+                    <div className="text-xs text-muted-foreground">
+                      Auto-save plans to ~/.plannotator/plans/
+                    </div>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={planSave.enabled}
+                    onClick={() => handlePlanSaveChange({ enabled: !planSave.enabled })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      planSave.enabled ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                        planSave.enabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {planSave.enabled && (
+                  <div className="space-y-1.5 pl-0.5">
+                    <label className="text-xs text-muted-foreground">Custom Path (optional)</label>
+                    <input
+                      type="text"
+                      value={planSave.customPath || ''}
+                      onChange={(e) => handlePlanSaveChange({ customPath: e.target.value || null })}
+                      placeholder="~/.plannotator/plans/"
+                      className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                    <div className="text-[10px] text-muted-foreground/70">
+                      Leave empty to use default location
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {origin === 'opencode' && (
+                <>
+                  <div className="border-t border-border" />
+
+                  {/* Agent Switching (OpenCode only) */}
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-sm font-medium">Agent Switching</div>
+                      <div className="text-xs text-muted-foreground">
+                        Which agent to switch to after plan approval
+                      </div>
+                    </div>
+                    <select
+                      value={agent.switchTo}
+                      onChange={(e) => handleAgentChange(e.target.value as AgentSwitchSettings['switchTo'])}
+                      className="w-full px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+                    >
+                      {AGENT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="text-[10px] text-muted-foreground/70">
+                      {AGENT_OPTIONS.find(o => o.value === agent.switchTo)?.description}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="border-t border-border" />
 
@@ -184,54 +286,54 @@ export const Settings: React.FC<SettingsProps> = ({ taterMode, onTaterModeChange
 
                 {obsidian.enabled && (
                   <div className="space-y-3 pl-0.5">
-                    {/* Vault Path */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">Vault</label>
-                      {vaultsLoading ? (
-                        <div className="w-full px-3 py-2 bg-muted rounded-lg text-xs text-muted-foreground">
-                          Detecting vaults...
-                        </div>
-                      ) : detectedVaults.length > 0 ? (
-                        <select
-                          value={obsidian.vaultPath}
-                          onChange={(e) => handleObsidianChange({ vaultPath: e.target.value })}
-                          className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
-                        >
-                          {detectedVaults.map((vault) => (
-                            <option key={vault} value={vault}>
-                              {vault.split('/').pop() || vault}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
+                    {/* Vault & Folder Row */}
+                    <div className="flex gap-3">
+                      {/* Vault Path */}
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-xs text-muted-foreground">Vault</label>
+                        {vaultsLoading ? (
+                          <div className="w-full px-3 py-2 bg-muted rounded-lg text-xs text-muted-foreground">
+                            Detecting...
+                          </div>
+                        ) : detectedVaults.length > 0 ? (
+                          <select
+                            value={obsidian.vaultPath}
+                            onChange={(e) => handleObsidianChange({ vaultPath: e.target.value })}
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer"
+                          >
+                            {detectedVaults.map((vault) => (
+                              <option key={vault} value={vault}>
+                                {vault.split('/').pop() || vault}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={obsidian.vaultPath}
+                            onChange={(e) => handleObsidianChange({ vaultPath: e.target.value })}
+                            placeholder="/path/to/vault"
+                            className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                        )}
+                      </div>
+
+                      {/* Folder */}
+                      <div className="w-44 space-y-1.5">
+                        <label className="text-xs text-muted-foreground">Folder</label>
                         <input
                           type="text"
-                          value={obsidian.vaultPath}
-                          onChange={(e) => handleObsidianChange({ vaultPath: e.target.value })}
-                          placeholder="/Users/you/Documents/MyVault"
+                          value={obsidian.folder}
+                          onChange={(e) => handleObsidianChange({ folder: e.target.value })}
+                          placeholder="plannotator"
                           className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
-                      )}
-                      {detectedVaults.length === 0 && !vaultsLoading && (
-                        <div className="text-[10px] text-muted-foreground/70">
-                          No vaults detected. Enter path manually.
-                        </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Folder */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs text-muted-foreground">Folder</label>
-                      <input
-                        type="text"
-                        value={obsidian.folder}
-                        onChange={(e) => handleObsidianChange({ folder: e.target.value })}
-                        placeholder="plannotator"
-                        className="w-full px-3 py-2 bg-muted rounded-lg text-xs font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                      />
-                      <div className="text-[10px] text-muted-foreground/70">
-                        Plans saved to: {obsidian.vaultPath || '...'}/{obsidian.folder || 'plannotator'}/
-                      </div>
+                    {/* Save path preview */}
+                    <div className="text-[10px] text-muted-foreground/70">
+                      Plans saved to: {obsidian.vaultPath || '...'}/{obsidian.folder || 'plannotator'}/
                     </div>
 
                     {/* Frontmatter Preview */}
@@ -274,7 +376,8 @@ tags: [plan, ...]
                   />
                 </button>
               </div>
-            </div>
+
+              </div>
           </div>
         </div>,
         document.body
