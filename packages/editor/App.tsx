@@ -16,7 +16,7 @@ import { TableOfContents } from '@plannotator/ui/components/TableOfContents';
 import { useSharing } from '@plannotator/ui/hooks/useSharing';
 import { useAgents } from '@plannotator/ui/hooks/useAgents';
 import { useActiveSection } from '@plannotator/ui/hooks/useActiveSection';
-import { storage } from '@plannotator/ui/utils/storage';
+import { storage, getAutoClose } from '@plannotator/ui/utils/storage';
 import { UpdateBanner } from '@plannotator/ui/components/UpdateBanner';
 import { getObsidianSettings, getEffectiveVaultPath, isObsidianConfigured, CUSTOM_PATH_SENTINEL } from '@plannotator/ui/utils/obsidian';
 import { getBearSettings } from '@plannotator/ui/utils/bear';
@@ -570,6 +570,9 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      if (getAutoClose()) {
+        window.close();
+      }
       setSubmitted('approved');
     } catch {
       setIsSubmitting(false);
@@ -591,6 +594,9 @@ const App: React.FC = () => {
           },
         })
       });
+      if (getAutoClose()) {
+        window.close();
+      }
       setSubmitted('denied');
     } catch {
       setIsSubmitting(false);

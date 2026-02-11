@@ -4,7 +4,7 @@ import { ModeToggle } from '@plannotator/ui/components/ModeToggle';
 import { ConfirmDialog } from '@plannotator/ui/components/ConfirmDialog';
 import { Settings } from '@plannotator/ui/components/Settings';
 import { UpdateBanner } from '@plannotator/ui/components/UpdateBanner';
-import { storage } from '@plannotator/ui/utils/storage';
+import { storage, getAutoClose } from '@plannotator/ui/utils/storage';
 import { getIdentity } from '@plannotator/ui/utils/identity';
 import { getAgentSwitchSettings, getEffectiveAgentName } from '@plannotator/ui/utils/agentSwitch';
 import { CodeAnnotation, CodeAnnotationType, SelectedLineRange, DiffAnnotationMetadata } from '@plannotator/ui/types';
@@ -415,6 +415,9 @@ const ReviewApp: React.FC = () => {
         }),
       });
       if (res.ok) {
+        if (getAutoClose()) {
+          window.close();
+        }
         setSubmitted('feedback');
       } else {
         throw new Error('Failed to send');
@@ -440,6 +443,9 @@ const ReviewApp: React.FC = () => {
         }),
       });
       if (res.ok) {
+        if (getAutoClose()) {
+          window.close();
+        }
         setSubmitted('approved');
       } else {
         throw new Error('Failed to send');

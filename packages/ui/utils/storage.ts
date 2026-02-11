@@ -52,6 +52,19 @@ function escapeRegex(str: string): string {
 }
 
 /**
+ * Auto-close tab setting
+ */
+const AUTO_CLOSE_KEY = 'plannotator-auto-close';
+
+export function getAutoClose(): boolean {
+  return getItem(AUTO_CLOSE_KEY) === 'true';
+}
+
+export function setAutoClose(enabled: boolean): void {
+  setItem(AUTO_CLOSE_KEY, String(enabled));
+}
+
+/**
  * Storage object with localStorage-like API
  */
 export const storage = {
