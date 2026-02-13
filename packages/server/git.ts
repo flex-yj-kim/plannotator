@@ -84,6 +84,9 @@ export async function getGitContext(): Promise<GitContext> {
 
   const diffOptions: DiffOption[] = [
     { id: "uncommitted", label: "Uncommitted changes" },
+    { id: "staged", label: "Staged changes" },
+    { id: "unstaged", label: "Unstaged changes" },
+    { id: "separator" as DiffType | "separator", label: "" },
     { id: "last-commit", label: "Last commit" },
   ];
 
