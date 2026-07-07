@@ -152,10 +152,15 @@ if (args[0] === "review") {
 
   let planContent = "";
   let permissionMode = "default";
+  // Original ExitPlanMode tool_input. Claude Code >= 2.1.199 discards a
+  // PermissionRequest "allow" decision for ExitPlanMode unless it echoes
+  // updatedInput back, so we capture it here to return on approval.
+  let toolInput: unknown = {};
   try {
     const event = JSON.parse(eventJson);
     planContent = event.tool_input?.plan || "";
     permissionMode = event.permission_mode || "default";
+    toolInput = event.tool_input ?? {};
   } catch {
     console.error("Failed to parse hook event from stdin");
     process.exit(1);
@@ -206,6 +211,11 @@ if (args[0] === "review") {
           hookEventName: "PermissionRequest",
           decision: {
             behavior: "allow",
+            // Echo the original tool_input as updatedInput. Claude Code
+            // >= 2.1.199 silently drops an allow decision for ExitPlanMode
+            // (a tool requiring user interaction) when updatedInput is absent,
+            // falling back to the built-in approval dialog. See issue #995.
+            updatedInput: toolInput,
             ...(updatedPermissions.length > 0 && { updatedPermissions }),
           },
         },
